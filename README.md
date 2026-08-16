@@ -7,7 +7,7 @@ An immersive VR sound design case study exploring how audio communicates tension
 
 ## Live Demo
 
-🔗 Add your Vercel URL here
+🔗 https://hackedvr.vercel.app/
 
 ## Project Overview
 
