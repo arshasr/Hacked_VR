@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hacked: VR — Case Study</title>
+<style>
+:root {
+  --bg:#050A0F; --bg-card:#0D1520; --bg-card2:#0A1018;
+  --cyan:#00F5D4; --red:#FF3A5C; --green:#39FF14; --amber:#FFB800;
+  --white:#E8F0F7; --muted:#5C7A96; --border:#1A3050;
+  --mono:'Courier New',Courier,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--white);font-family:var(--mono);font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(5,10,15,0.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 48px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-size:13px;letter-spacing:2px;color:var(--cyan);}
+.nav-links{display:flex;gap:28px;list-style:none;}
+.nav-links a{font-size:11px;letter-spacing:2px;color:var(--muted);text-decoration:none;text-transform:uppercase;transition:color .2s;}
+.nav-links a:hover{color:var(--cyan);}
+
+/* HERO */
+#hero{position:relative;height:100vh;min-height:600px;overflow:hidden;display:flex;align-items:flex-end;padding-top:56px;}
+.hero-video-wrap{position:absolute;inset:0;z-index:0;}
+.hero-video-wrap video{width:100%;height:100%;object-fit:cover;opacity:0.55;}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(5,10,15,1) 0%,rgba(5,10,15,0.6) 40%,rgba(5,10,15,0.2) 100%);z-index:1;}
+.hero-grid-lines{position:absolute;inset:0;z-index:1;background-image:linear-gradient(rgba(26,48,80,0.3) 1px,transparent 1px),linear-gradient(90deg,rgba(26,48,80,0.3) 1px,transparent 1px);background-size:60px 60px;mask-image:linear-gradient(to top,rgba(0,0,0,0.8),transparent);}
+.hero-content{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;padding:0 48px 72px;}
+.hero-eyebrow{display:flex;align-items:center;gap:12px;margin-bottom:28px;flex-wrap:wrap;}
+.hero-eyebrow span{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.hero-eyebrow .dot{width:3px;height:3px;background:var(--muted);border-radius:50%;}
+h1.hero-title{font-size:clamp(60px,9vw,120px);font-weight:700;line-height:.92;letter-spacing:-2px;color:var(--cyan);margin-bottom:20px;}
+.hero-sub{font-size:clamp(16px,2vw,22px);color:var(--white);letter-spacing:1px;margin-bottom:6px;}
+.hero-sub2{font-size:13px;color:var(--muted);letter-spacing:2px;margin-bottom:48px;}
+.hero-meta{display:flex;gap:40px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:28px;}
+.hm-item label{display:block;font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+.hm-item span{font-size:13px;color:var(--white);}
+.hero-mute{position:absolute;bottom:80px;right:48px;z-index:3;background:rgba(13,21,32,0.8);border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:2px;padding:8px 14px;cursor:pointer;text-transform:uppercase;transition:color .2s,border-color .2s;}
+.hero-mute:hover{color:var(--cyan);border-color:var(--cyan);}
+
+/* ENTRY OVERLAY */
+#entry-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;
+  transition:opacity .8s ease;
+}
+#entry-overlay.fade-out{opacity:0;pointer-events:none;}
+.entry-pre{font-size:10px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:24px;animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.entry-title{font-size:clamp(48px,8vw,96px);font-weight:700;color:var(--cyan);letter-spacing:-2px;line-height:.95;text-align:center;margin-bottom:8px;}
+.entry-sub{font-size:14px;color:var(--muted);letter-spacing:2px;text-align:center;margin-bottom:56px;}
+.entry-btn{
+  padding:16px 48px;
+  background:transparent;
+  border:1px solid var(--cyan);
+  color:var(--cyan);
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+  transition:color .3s;
+}
+.entry-btn::before{
+  content:'';position:absolute;inset:0;
+  background:var(--cyan);
+  transform:translateX(-100%);
+  transition:transform .3s ease;
+  z-index:-1;
+}
+.entry-btn:hover::before{transform:translateX(0);}
+.entry-btn:hover{color:var(--bg);}
+.entry-corner{position:absolute;width:16px;height:16px;border-color:var(--muted);border-style:solid;}
+.entry-corner.tl{top:24px;left:24px;border-width:1px 0 0 1px;}
+.entry-corner.tr{top:24px;right:24px;border-width:1px 1px 0 0;}
+.entry-corner.bl{bottom:24px;left:24px;border-width:0 0 1px 1px;}
+.entry-corner.br{bottom:24px;right:24px;border-width:0 1px 1px 0;}
+.entry-scanline{
+  position:absolute;top:0;left:0;right:0;
+  height:2px;background:rgba(0,245,212,.15);
+  animation:scan 3s linear infinite;
+}
+@keyframes scan{0%{top:-2px;}100%{top:100%;}}
+
+/* UTILS */
+.section{padding:88px 0;}
+.container{max-width:1200px;margin:0 auto;padding:0 48px;}
+.sec-hd{margin-bottom:48px;}
+.tag{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:10px;}
+.sec-hd h2{font-size:clamp(26px,4vw,42px);font-weight:700;color:var(--white);line-height:1.15;margin-top:8px;}
+.gap2{display:grid;gap:2px;}
+.g2{grid-template-columns:1fr 1fr;}
+.g3{grid-template-columns:repeat(3,1fr);}
+.g4{grid-template-columns:repeat(4,1fr);}
+.panel{background:var(--bg-card);border:1px solid var(--border);padding:48px;}
+.panel h3{font-size:19px;margin-bottom:14px;}
+.panel p{font-size:14px;color:var(--white);line-height:1.8;}
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
+.reveal.visible{opacity:1;transform:none;}
+
+/* STILL IMAGE DIVIDERS */
+.still-divider{width:100%;height:480px;overflow:hidden;position:relative;}
+.still-divider img{width:100%;height:100%;object-fit:cover;opacity:.7;}
+.still-divider-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(5,10,15,.85) 0%,rgba(5,10,15,.3) 60%,rgba(5,10,15,.1) 100%);}
+.still-label{position:absolute;top:40px;left:48px;z-index:2;}
+.still-label .tag{color:var(--cyan);font-size:10px;}
+.still-label h3{font-size:clamp(20px,3vw,32px);color:var(--white);font-weight:700;margin-top:6px;max-width:420px;line-height:1.3;}
+
+/* CONTEXT */
+#context{background:var(--bg-card2);}
+.pill-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px;}
+.pill{padding:16px;border:1px solid var(--border);background:rgba(26,48,80,.25);}
+.pill.on{border-color:var(--cyan);background:rgba(0,245,212,.05);}
+.pill .pl{font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:5px;}
+.pill.on .pl{color:var(--cyan);}
+.pill .pn{font-size:14px;font-weight:700;color:var(--white);}
+.pill.on .pn{color:var(--cyan);}
+.role-list{display:flex;flex-direction:column;gap:22px;margin-top:20px;}
+.role-item{display:flex;gap:16px;}
+.role-bar{width:3px;background:var(--cyan);flex-shrink:0;}
+.rl{font-size:10px;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;display:block;margin-bottom:4px;}
+.rd{font-size:13px;color:var(--white);line-height:1.6;}
+.tnote{margin-top:28px;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.6;}
+
+/* MIXIBITION */
+#mixibition{background:var(--bg);border-top:2px solid var(--amber);}
+#mixibition .sec-hd h2{color:var(--amber);}
+.mix-row-item{display:flex;gap:0;border-bottom:1px solid var(--border);padding:15px 0;align-items:baseline;}
+.mix-row-item:last-child{border-bottom:none;}
+.mk{font-size:10px;letter-spacing:3px;color:var(--amber);text-transform:uppercase;width:90px;flex-shrink:0;}
+.mv{font-size:14px;color:var(--white);}
+.mix-callout{margin-top:28px;padding:20px;background:rgba(255,184,0,.06);border-left:2px solid var(--amber);font-size:13px;color:var(--amber);line-height:1.7;}
+
+/* BRIEF */
+#brief{background:var(--bg-card2);}
+.bquote{padding:44px;border:1px solid var(--border);background:var(--bg-card);margin-bottom:40px;position:relative;}
+.bquote::before{content:'"';position:absolute;top:16px;left:28px;font-size:80px;color:var(--border);line-height:1;}
+.bquote p{font-size:clamp(15px,2vw,21px);color:var(--cyan);font-style:italic;line-height:1.65;padding-left:12px;}
+.scope-card{background:var(--bg-card);border:1px solid var(--border);padding:40px 32px;position:relative;overflow:hidden;}
+.scope-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.s1::before{background:var(--cyan);} .s2::before{background:var(--amber);} .s3::before{background:var(--green);}
+.snum{font-size:50px;font-weight:700;line-height:1;margin-bottom:14px;}
+.s1 .snum{color:var(--cyan);} .s2 .snum{color:var(--amber);} .s3 .snum{color:var(--green);}
+.stitle{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--white);font-weight:700;margin-bottom:14px;}
+.sbody{font-size:13px;color:var(--white);line-height:1.7;}
+
+/* FRAMEWORK */
+#framework{background:var(--bg);}
+.fw-col{background:var(--bg-card);border:1px solid var(--border);position:relative;overflow:hidden;}
+.fw-top-bar{height:3px;position:absolute;top:0;left:0;right:0;}
+.cv .fw-top-bar{background:var(--red);} .ca .fw-top-bar{background:var(--green);} .ch .fw-top-bar{background:var(--cyan);} .ci .fw-top-bar{background:var(--amber);}
+.fw-head{padding:28px 22px 20px;border-bottom:1px solid var(--border);}
+.fw-title{font-size:11px;letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:7px;}
+.cv .fw-title{color:var(--red);} .ca .fw-title{color:var(--green);} .ch .fw-title{color:var(--cyan);} .ci .fw-title{color:var(--amber);}
+.fw-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+.fw-items{padding:22px;display:flex;flex-direction:column;gap:14px;}
+.fw-item{display:flex;gap:9px;align-items:flex-start;}
+.fw-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px;}
+.cv .fw-dot{background:var(--red);} .ca .fw-dot{background:var(--green);} .ch .fw-dot{background:var(--cyan);} .ci .fw-dot{background:var(--amber);}
+.fw-item span{font-size:12px;color:var(--white);line-height:1.5;}
+
+/* ARC */
+#arc{background:var(--bg-card2);}
+.arc-wrap{position:relative;padding-top:36px;}
+.arc-line{position:absolute;top:56px;left:0;right:0;height:1px;background:var(--border);}
+.arc-acts{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;position:relative;z-index:1;align-items:stretch;}
+.arc-act{cursor:pointer;display:flex;flex-direction:column;}
+.arc-hd{display:flex;flex-direction:column;align-items:center;padding-bottom:28px;flex-shrink:0;}
+.arc-lbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-bottom:11px;}
+.a1 .arc-lbl{color:var(--cyan);} .a2 .arc-lbl{color:#5BC8FF;} .a3 .arc-lbl{color:var(--red);} .a4 .arc-lbl{color:var(--green);}
+.arc-dot{width:14px;height:14px;border-radius:50%;}
+.a1 .arc-dot{background:var(--cyan);box-shadow:0 0 10px rgba(0,245,212,.5);}
+.a2 .arc-dot{background:#5BC8FF;box-shadow:0 0 10px rgba(91,200,255,.5);}
+.a3 .arc-dot{background:var(--red);box-shadow:0 0 10px rgba(255,58,92,.5);}
+.a4 .arc-dot{background:var(--green);box-shadow:0 0 10px rgba(57,255,20,.5);}
+.arc-card{background:var(--bg-card);border:1px solid var(--border);padding:28px 22px;transition:border-color .2s;flex:1;}
+.arc-act.sel .arc-card,.arc-act:hover .arc-card{border-color:currentColor;}
+.a1.sel .arc-card,.a1:hover .arc-card{border-color:var(--cyan);}
+.a2.sel .arc-card,.a2:hover .arc-card{border-color:#5BC8FF;}
+.a3.sel .arc-card,.a3:hover .arc-card{border-color:var(--red);}
+.a4.sel .arc-card,.a4:hover .arc-card{border-color:var(--green);}
+.arc-top{height:3px;margin:-28px -22px 20px;}
+.a1 .arc-top{background:var(--cyan);} .a2 .arc-top{background:#5BC8FF;} .a3 .arc-top{background:var(--red);} .a4 .arc-top{background:var(--green);}
+.arc-status{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.arc-title{font-size:17px;font-weight:700;color:var(--white);margin-bottom:20px;line-height:1.3;}
+.afl{font-size:9px;letter-spacing:3px;text-transform:uppercase;font-weight:700;margin-bottom:5px;}
+.a1 .afl{color:var(--cyan);} .a2 .afl{color:#5BC8FF;} .a3 .afl{color:var(--red);} .a4 .afl{color:var(--green);}
+.afv{font-size:12px;color:var(--white);line-height:1.6;margin-bottom:18px;font-style:italic;}
+.afv.plain{font-style:normal;color:var(--muted);}
+
+/* AUDIO PLAYERS — shared */
+.audio-section{padding:16px 0 0;}
+.audio-block{margin-bottom:16px;}
+.audio-label{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:6px;}
+audio{width:100%;height:32px;filter:invert(1) hue-rotate(120deg) brightness(.8);display:block;}
+
+/* ACT PLAYERS strip */
+.act-players{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-top:2px;}
+.act-player-card{background:var(--bg-card);border:1px solid var(--border);padding:24px;}
+.ap-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:16px;}
+.act1 .ap-title{color:var(--cyan);} .act2 .ap-title{color:#5BC8FF;} .act3 .ap-title{color:var(--red);} .act4 .ap-title{color:var(--green);}
+.ap-row{margin-bottom:14px;}
+.ap-row-lbl{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:5px;}
+audio.ap{width:100%;height:28px;filter:invert(1) sepia(1) saturate(2) hue-rotate(100deg) brightness(.75);}
+
+/* SFX ROW */
+#sfx{background:var(--bg);}
+.sfx-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;}
+.sfx-card{background:var(--bg-card);border:1px solid var(--border);padding:28px 24px;position:relative;overflow:hidden;}
+.sfx-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sfx-button::before{background:var(--cyan);}
+.sfx-rumble::before{background:var(--red);}
+.sfx-fans::before{background:#5BC8FF;}
+.sfx-g1::before{background:var(--amber);}
+.sfx-g2::before{background:var(--red);}
+.sfx-cat{font-size:9px;letter-spacing:3px;text-transform:uppercase;display:block;margin-bottom:6px;}
+.sfx-button .sfx-cat{color:var(--cyan);}
+.sfx-rumble .sfx-cat{color:var(--red);}
+.sfx-fans .sfx-cat{color:#5BC8FF;}
+.sfx-g1 .sfx-cat,.sfx-g2 .sfx-cat{color:var(--amber);}
+.sfx-name{font-size:14px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.sfx-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+audio.sfx{width:100%;height:28px;filter:invert(1) sepia(1) saturate(2) hue-rotate(100deg) brightness(.75);}
+
+/* PIPELINE */
+#pipeline{background:var(--bg-card2);}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:2px;}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);padding:30px;display:flex;align-items:center;gap:20px;}
+.stn{font-size:54px;font-weight:700;line-height:1;}
+.st1 .stn{color:var(--cyan);} .st2 .stn{color:var(--amber);} .st3 .stn{color:var(--green);}
+.stl{font-size:14px;color:var(--white);font-weight:700;}
+.sts{font-size:12px;color:var(--muted);margin-top:3px;}
+.tool-list{display:flex;flex-direction:column;gap:0;}
+.tool-item{display:flex;gap:14px;align-items:flex-start;padding:18px 0;border-bottom:1px solid var(--border);}
+.tool-item:last-child{border-bottom:none;}
+.tarrow{font-size:16px;margin-top:3px;flex-shrink:0;}
+.st1 .tarrow{color:var(--cyan);} .st2 .tarrow{color:var(--amber);} .st3 .tarrow{color:var(--green);}
+.tname{font-size:14px;font-weight:700;margin-bottom:4px;}
+.st1 .tname{color:var(--cyan);} .st2 .tname{color:var(--amber);} .st3 .tname{color:var(--green);}
+.tdesc{font-size:12px;color:var(--muted);line-height:1.5;}
+.p-quote{margin-top:28px;padding:22px 28px;border-left:2px solid var(--muted);font-size:13px;color:var(--muted);font-style:italic;line-height:1.7;}
+.p-status{margin-top:20px;font-size:11px;color:var(--muted);letter-spacing:2px;}
+
+/* UNITY */
+#unity{background:var(--bg);}
+.scene-item{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.scene-item:last-child{border-bottom:none;}
+.scene-n{color:var(--muted);min-width:80px;font-size:11px;letter-spacing:2px;}
+.arch-item{padding:18px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;}
+.arch-item:last-child{border-bottom:none;}
+.arch-bar{width:3px;background:var(--cyan);flex-shrink:0;}
+.aname{font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.adesc{font-size:12px;color:var(--muted);line-height:1.5;}
+.haptic-bar{background:rgba(0,245,212,.04);border:1px solid var(--border);border-top:none;padding:26px 48px;display:flex;gap:22px;}
+.hl{font-size:11px;letter-spacing:3px;color:var(--cyan);text-transform:uppercase;flex-shrink:0;margin-top:2px;}
+.ht{font-size:13px;color:var(--white);line-height:1.7;}
+
+/* REFLECTIONS */
+#reflections{background:var(--bg-card2);border-top:2px solid var(--green);}
+#reflections .sec-hd h2{color:var(--green);}
+.ref-item{display:flex;gap:22px;padding:26px 0;border-bottom:1px solid var(--border);}
+.ref-item:last-child{border-bottom:none;}
+.rn{font-size:30px;font-weight:700;line-height:1;flex-shrink:0;min-width:44px;}
+.r1 .rn{color:var(--cyan);} .r2 .rn{color:var(--amber);} .r3 .rn{color:var(--green);} .r4 .rn{color:var(--red);}
+.rtitle{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:700;margin-bottom:7px;}
+.r1 .rtitle{color:var(--cyan);} .r2 .rtitle{color:var(--amber);} .r3 .rtitle{color:var(--green);} .r4 .rtitle{color:var(--red);}
+.rtext{font-size:13px;color:var(--white);line-height:1.7;}
+.log-item{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);align-items:baseline;font-size:13px;}
+.log-item:last-child{border-bottom:none;}
+.ltag{font-size:10px;letter-spacing:2px;font-weight:700;min-width:56px;flex-shrink:0;}
+.ldone{color:var(--green);} .lnext{color:var(--amber);}
+.ltext{color:var(--white);}
+.rclosing{margin-top:28px;padding:22px 28px;border-left:2px solid var(--green);font-size:14px;color:var(--green);font-style:italic;line-height:1.7;}
+
+/* FOOTER */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:40px 48px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.fl{font-size:12px;color:var(--muted);}
+.fl strong{color:var(--white);}
+.fr{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+
+@media(max-width:900px){
+  .container,.hero-content{padding:0 24px;}
+  nav{padding:0 24px;}
+  .nav-links{display:none;}
+  .g2,.g3,.g4,.arc-acts,.act-players,.stat-row,.sfx-grid{grid-template-columns:1fr;}
+  .haptic-bar{flex-direction:column;}
+  h1.hero-title{font-size:56px;}
+  .still-divider{height:280px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ENTRY OVERLAY -->
+<div id="entry-overlay">
+  <div class="entry-scanline"></div>
+  <div class="entry-corner tl"></div>
+  <div class="entry-corner tr"></div>
+  <div class="entry-corner bl"></div>
+  <div class="entry-corner br"></div>
+  <p class="entry-pre">// Initialising experience</p>
+  <h1 class="entry-title">HACKED:<br>VR</h1>
+  <p class="entry-sub">Sound Design Case Study &nbsp;·&nbsp; ASU Spring 2024</p>
+  <button class="entry-btn" id="entryBtn" onclick="enterExperience()">Enter Experience</button>
+</div>
+
+<!-- HIDDEN AUDIO ENGINE -->
+<audio id="bgMusic" src="synthesis1_welcome.mp3" preload="auto"></audio>
+<audio id="ambientLoop" src="setting1.mp3" loop preload="auto"></audio>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">// HACKED: VR</span>
+  <ul class="nav-links">
+    <li><a href="#context">Context</a></li>
+    <li><a href="#framework">Framework</a></li>
+    <li><a href="#arc">Narrative</a></li>
+    <li><a href="#sfx">Audio</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#reflections">Reflections</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-video-wrap">
+    <video autoplay muted loop playsinline id="herovid">
+      <source src="hacked_vr_gameview_clip.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-grid-lines"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span>DSC 551</span><div class="dot"></div>
+      <span>Immersive Experience Design</span><div class="dot"></div>
+      <span>Spring 2024</span>
+    </div>
+    <h1 class="hero-title">HACKED:<br>VR</h1>
+    <p class="hero-sub">Immersive VR Sound Design</p>
+    <p class="hero-sub2">Case Study — ASU Dreamscape Learn × Meteor Studio</p>
+    <div class="hero-meta">
+      <div class="hm-item"><label>Role</label><span>Sound Design</span></div>
+      <div class="hm-item"><label>Team</label><span>Arsh + William Mar</span></div>
+      <div class="hm-item"><label>Platform</label><span>Unity XR / VR</span></div>
+      <div class="hm-item"><label>Exhibited</label><span>MIXibition, May 2024</span></div>
+    </div>
+  </div>
+  <button class="hero-mute" id="muteBtn" onclick="toggleMute()" title="Browsers require a click to enable audio">♪ Tap for Sound</button>
+</section>
+
+<!-- CONTEXT -->
+<section id="context" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag">// Project Context</span>
+      <h2>Setting the Stage</h2>
+    </div>
+    <div class="gap2 g2 reveal">
+      <div class="panel">
+        <h3 style="color:var(--cyan)">ASU Collaboration</h3>
+        <p>The Immersive Experience Design cohort at Arizona State University partnered with Dreamscape Learn and Meteor Studio to develop two parallel VR environments. Each was built by one half of the class over the course of the spring semester.</p>
+        <div class="pill-row">
+          <div class="pill"><span class="pl">Project A</span><div class="pn">Urban Inferno</div></div>
+          <div class="pill on"><span class="pl">Project B — This Study</span><div class="pn">Hacked: VR</div></div>
+        </div>
+        <p class="tnote">A four-person Sound Design team split 2+2 across projects. Arsh and William Mar focused exclusively on Hacked: VR — responsible for every audio decision from concept through public exhibition.</p>
+      </div>
+      <div class="panel">
+        <h3 style="color:var(--cyan)">Sound Design Contributions</h3>
+        <div class="role-list">
+          <div class="role-item"><div class="role-bar"></div><div><span class="rl">Interaction Sounds</span><p class="rd">Tactical UX audio feedback tied to every physical prop interaction — the digital button, floor shakers, fans, the antivirus stick, and the lever return to the server room.</p></div></div>
+          <div class="role-item"><div class="role-bar"></div><div><span class="rl">Background Music</span><p class="rd">Four adaptive mood loops — one per act — shifting emotionally from soothing ambient through distorted glitch to triumphant resolution.</p></div></div>
+          <div class="role-item"><div class="role-bar"></div><div><span class="rl">Voice-over Narration</span><p class="rd">A scripted, eight-frame narrative arc synthesised using AI voice tools and delivered through 3D spatial audio anchored to scene positions within Unity.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STILL 01 DIVIDER -->
+<div class="still-divider reveal">
+  <img src="hacked_vr_still_01_datastream.jpg" alt="Hacked VR — data stream environment, Act I">
+  <div class="still-divider-overlay"></div>
+  <div class="still-label">
+    <span class="tag">// Act I — The Serenity of the Realm</span>
+    <h3>Data flows like water.<br>The network is in harmony.</h3>
+  </div>
+</div>
+
+<!-- MIXIBITION -->
+<section id="mixibition" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag" style="color:var(--amber)">// Public Exhibition</span>
+      <h2>MIXibition — Spring 2024</h2>
+    </div>
+    <div class="gap2 g2 reveal">
+      <div class="panel">
+        <div class="mix-row-item"><span class="mk">Date</span><span class="mv">May 1, 2024</span></div>
+        <div class="mix-row-item"><span class="mk">Time</span><span class="mv">6:00 PM – 8:30 PM</span></div>
+        <div class="mix-row-item"><span class="mk">Venue</span><span class="mv">ASU MIX Center</span></div>
+        <div class="mix-row-item"><span class="mk">Address</span><span class="mv">50 N. Centennial Way, Mesa, AZ 85201</span></div>
+        <div class="mix-row-item"><span class="mk">Host</span><span class="mv">ASU Herberger Institute for Design and the Arts</span></div>
+      </div>
+      <div class="panel">
+        <h3 style="color:var(--white)">A Night of Immersive Exhibits</h3>
+        <p>Hacked: VR was publicly exhibited at the MIXibition showcase — an event open to the Mesa community, featuring immersive exhibits and artwork from ASU faculty and students.</p>
+        <p style="margin-top:14px;">The experience was presented alongside Urban Inferno, giving the public a live demonstration of the full dual-project initiative in completed form.</p>
+        <div class="mix-callout">The sound design — voices, music loops, and interaction SFX — was heard by a live public audience for the first time at this event. This was the culminating validation of every design decision made across the semester.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BRIEF -->
+<section id="brief" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag">// The Design Brief</span>
+      <h2>What Sound Had to Solve</h2>
+    </div>
+    <div class="bquote reveal">
+      <p>"Design audio that makes a virtual computer world feel real — narrate a cybersecurity story, trigger precise feedback on every physical interaction, and shift the emotional register from serenity to threat to triumph across four acts."</p>
+    </div>
+    <div class="gap2 g3 reveal">
+      <div class="scope-card s1"><div class="snum">01</div><div class="stitle">Narrative Audio</div><p class="sbody">Script and synthesise four voice-over narrations — one per act — guiding the observer through the cybersecurity storyline from calm to chaos to resolution.</p></div>
+      <div class="scope-card s2"><div class="snum">02</div><div class="stitle">Ambient Music</div><p class="sbody">Compose four background mood loops shifting emotionally across acts: soothing ambient → ominous shift → distorted glitch → triumphant resolution score.</p></div>
+      <div class="scope-card s3"><div class="snum">03</div><div class="stitle">Interactive SFX</div><p class="sbody">Produce ten interaction sound effects tied to physical props: the digital button, floor shakers, fans, the antivirus stick, and the lever return to the server room.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FRAMEWORK -->
+<section id="framework" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag">// Audio Design Framework</span>
+      <h2>How We Mapped Sound to the World</h2>
+    </div>
+    <div class="gap2 g4 reveal">
+      <div class="fw-col cv"><div class="fw-top-bar"></div><div class="fw-head"><div class="fw-title">Virus Sounds</div><p class="fw-desc">Audio representing the threat — entering, spreading, corrupting.</p></div><div class="fw-items"><div class="fw-item"><div class="fw-dot"></div><span>Birth of the virus — analogous to a phishing email</span></div><div class="fw-item"><div class="fw-dot"></div><span>Propagation: how the virus spreads through the network</span></div><div class="fw-item"><div class="fw-dot"></div><span>Glitch-out moments and active cyber attack sequences</span></div><div class="fw-item"><div class="fw-dot"></div><span>Photos and data being erased or corrupted</span></div></div></div>
+      <div class="fw-col ca"><div class="fw-top-bar"></div><div class="fw-head"><div class="fw-title">Anti-Virus Sounds</div><p class="fw-desc">Audio representing the response — fighting back, restoring order.</p></div><div class="fw-items"><div class="fw-item"><div class="fw-dot"></div><span>Calming of the anarchy — the attack beginning to subside</span></div><div class="fw-item"><div class="fw-dot"></div><span>Resolution — system integrity fully restored</span></div><div class="fw-item"><div class="fw-dot"></div><span>Protection engaging against this specific virus</span></div><div class="fw-item"><div class="fw-dot"></div><span>Firewall activating, code rains, CPU fans spinning up</span></div></div></div>
+      <div class="fw-col ch"><div class="fw-top-bar"></div><div class="fw-head"><div class="fw-title">Haptic Connection</div><p class="fw-desc">Audio synchronised to physical actuators — floor, fans, vibration.</p></div><div class="fw-items"><div class="fw-item"><div class="fw-dot"></div><span>Floor shakes: indicating the virus has arrived</span></div><div class="fw-item"><div class="fw-dot"></div><span>Fans directing air in the direction of the flying deck</span></div><div class="fw-item"><div class="fw-dot"></div><span>Floor escalation matched to the chip transition</span></div><div class="fw-item"><div class="fw-dot"></div><span>Gradual calm as the system is restored</span></div></div></div>
+      <div class="fw-col ci"><div class="fw-top-bar"></div><div class="fw-head"><div class="fw-title">Interactivity</div><p class="fw-desc">Audio cues triggered by direct user actions in the VR environment.</p></div><div class="fw-items"><div class="fw-item"><div class="fw-dot"></div><span>Initiating the virus — analogous to clicking a phishing link</span></div><div class="fw-item"><div class="fw-dot"></div><span>If colour is used, sound attaches to the colour cue</span></div><div class="fw-item"><div class="fw-dot"></div><span>Button press to initiate chip transport</span></div><div class="fw-item"><div class="fw-dot"></div><span>Lever pull to return to the server room</span></div></div></div>
+    </div>
+    <p style="margin-top:28px;font-size:12px;color:var(--muted);font-style:italic;" class="reveal">The audio blueprint was defined before any assets were produced — categories mapped to world objects and storyline so that every sound served a specific narrative or UX function.</p>
+  </div>
+</section>
+
+<!-- STILL 02 DIVIDER -->
+<div class="still-divider reveal">
+  <img src="hacked_vr_still_02_streams.jpg" alt="Hacked VR — data streams Act II">
+  <div class="still-divider-overlay"></div>
+  <div class="still-label">
+    <span class="tag">// Act II — Exploration of the Chip</span>
+    <h3>User data, system files,<br>financial records — each interconnected.</h3>
+  </div>
+</div>
+
+<!-- ARC -->
+<section id="arc" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag">// Narrative Arc</span>
+      <h2>Soundscaping a Four-Act Digital Journey</h2>
+    </div>
+    <div class="arc-wrap reveal">
+      <div class="arc-line"></div>
+      <div class="arc-acts">
+        <div class="arc-act a1 sel" onclick="selAct(this)">
+          <div class="arc-hd"><span class="arc-lbl">Act I</span><div class="arc-dot"></div></div>
+          <div class="arc-card"><div class="arc-top"></div>
+            <div class="arc-status">// SYS_STABLE</div>
+            <div class="arc-title">The Serenity of the Realm</div>
+            <div class="afl">Voice</div><div class="afv">"Welcome, observer, to Hacked. A serene network in perfect harmony."</div>
+            <div class="afl">Audio</div><div class="afv plain">Ambient, soothing — reinforcing system stability.</div>
+            <div class="afl">Interaction</div><div class="afv plain">Button press to initiate chip transport.</div>
+          </div>
+        </div>
+        <div class="arc-act a2" onclick="selAct(this)">
+          <div class="arc-hd"><span class="arc-lbl">Act II</span><div class="arc-dot"></div></div>
+          <div class="arc-card"><div class="arc-top"></div>
+            <div class="arc-status">// NAVIGATING</div>
+            <div class="arc-title">Exploration of the Chip</div>
+            <div class="afl">Voice</div><div class="afv">"Data flows like water — user data, system files, each element vital."</div>
+            <div class="afl">Audio</div><div class="afv plain">City-like ambient hum, data stream tones — the world feels alive.</div>
+            <div class="afl">Interaction</div><div class="afv plain">Floor shakes escalate; fans activate toward the flying deck.</div>
+          </div>
+        </div>
+        <div class="arc-act a3" onclick="selAct(this)">
+          <div class="arc-hd"><span class="arc-lbl">Act III</span><div class="arc-dot"></div></div>
+          <div class="arc-card"><div class="arc-top"></div>
+            <div class="arc-status">// ERR_CRITICAL</div>
+            <div class="arc-title">The Virus Attack</div>
+            <div class="afl">Voice</div><div class="afv">"A rogue element slips through. System files corrupted. Chaos begins."</div>
+            <div class="afl">Audio</div><div class="afv plain">Distorted glitch sounds escalating into high-stakes dramatic music.</div>
+            <div class="afl">Interaction</div><div class="afv plain">Fans disperse, floor shakes; stick used to pop virus bubbles.</div>
+          </div>
+        </div>
+        <div class="arc-act a4" onclick="selAct(this)">
+          <div class="arc-hd"><span class="arc-lbl">Act IV</span><div class="arc-dot"></div></div>
+          <div class="arc-card"><div class="arc-top"></div>
+            <div class="arc-status">// RESTORED</div>
+            <div class="arc-title">Restoration of Integrity</div>
+            <div class="afl">Voice</div><div class="afv">"In the digital world, vigilance is our greatest ally. Stay safe."</div>
+            <div class="afl">Audio</div><div class="afv plain">Climactic resolution building to a triumphant score.</div>
+            <div class="afl">Interaction</div><div class="afv plain">Floor calms; lever pulled to return to the server room.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACT AUDIO PLAYERS -->
+    <div style="margin-top:32px;" class="reveal">
+      <span class="tag" style="margin-bottom:16px;">// Listen — Audio by Act</span>
+      <div class="act-players">
+        <div class="act-player-card act1">
+          <div class="ap-title">Act I — Serene</div>
+          <div class="ap-row"><span class="ap-row-lbl">Background Music</span><audio class="ap" controls src="setting1.mp3" preload="none"></audio></div>
+          <div class="ap-row"><span class="ap-row-lbl">Voice Narration</span><audio class="ap" controls src="synthesis1.mp3" preload="none"></audio></div>
+        </div>
+        <div class="act-player-card act2">
+          <div class="ap-title">Act II — Exploration</div>
+          <div class="ap-row"><span class="ap-row-lbl">Background Music</span><audio class="ap" controls src="setting2.mp3" preload="none"></audio></div>
+          <div class="ap-row"><span class="ap-row-lbl">Voice Narration</span><audio class="ap" controls src="synthesis2.mp3" preload="none"></audio></div>
+        </div>
+        <div class="act-player-card act3">
+          <div class="ap-title">Act III — Attack</div>
+          <div class="ap-row"><span class="ap-row-lbl">Background Music</span><audio class="ap" controls src="setting3.mp3" preload="none"></audio></div>
+          <div class="ap-row"><span class="ap-row-lbl">Voice Narration</span><audio class="ap" controls src="synthesis3.mp3" preload="none"></audio></div>
+        </div>
+        <div class="act-player-card act4">
+          <div class="ap-title">Act IV — Restored</div>
+          <div class="ap-row"><span class="ap-row-lbl">Background Music</span><audio class="ap" controls src="setting4.mp3" preload="none"></audio></div>
+          <div class="ap-row"><span class="ap-row-lbl">Voice Narration</span><audio class="ap" controls src="synthesis4.mp3" preload="none"></audio></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STILL 03 DIVIDER -->
+<div class="still-divider reveal">
+  <img src="hacked_vr_still_03_dome.jpg" alt="Hacked VR — virus world with dome structure">
+  <div class="still-divider-overlay"></div>
+  <div class="still-label">
+    <span class="tag">// Act III — The Virus Attack</span>
+    <h3>A rogue element slips through.<br>The battle ensues.</h3>
+  </div>
+</div>
+
+<!-- SFX -->
+<section id="sfx" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag">// Interaction Sound Effects</span>
+      <h2>Sound as UX Feedback</h2>
+    </div>
+    <p style="font-size:14px;color:var(--white);line-height:1.8;margin-bottom:40px;max-width:720px;" class="reveal">Every physical interaction in the experience had a paired audio cue. Sound was not decorative — it was functional feedback that confirmed each action and reinforced the narrative state the observer was in.</p>
+    <div class="sfx-grid reveal">
+      <div class="sfx-card sfx-button">
+        <span class="sfx-cat">Interactivity</span>
+        <div class="sfx-name">Button Press</div>
+        <p class="sfx-desc">Triggered when the observer presses the digital button to initiate chip transport from the server room.</p>
+        <audio class="sfx" controls src="sfx_button.mp3" preload="none"></audio>
+      </div>
+      <div class="sfx-card sfx-rumble">
+        <span class="sfx-cat">Haptic — Virus Arrival</span>
+        <div class="sfx-name">Ominous Rumble</div>
+        <p class="sfx-desc">Loopable low-frequency rumble synchronised to floor shakes — indicating the virus has entered the environment.</p>
+        <audio class="sfx" controls src="sfx_rumble.mp3" preload="none"></audio>
+      </div>
+      <div class="sfx-card sfx-fans">
+        <span class="sfx-cat">Haptic — Transport</span>
+        <div class="sfx-name">Blowing Fans</div>
+        <p class="sfx-desc">Fan audio matching the physical fans that activate in the direction of the flying deck during chip transport.</p>
+        <audio class="sfx" controls src="sfx_fans.mp3" preload="none"></audio>
+      </div>
+      <div class="sfx-card sfx-g1">
+        <span class="sfx-cat">Virus — Attack</span>
+        <div class="sfx-name">Analog Glitch 1</div>
+        <p class="sfx-desc">Distorted analog glitch — used during active cyber attack sequences and data corruption moments.</p>
+        <audio class="sfx" controls src="sfx_glitch1.mp3" preload="none"></audio>
+      </div>
+      <div class="sfx-card sfx-g2">
+        <span class="sfx-cat">Virus — Attack</span>
+        <div class="sfx-name">Glitch Tickle</div>
+        <p class="sfx-desc">A secondary glitch texture layered over the primary attack audio to create a sense of pervasive system corruption.</p>
+        <audio class="sfx" controls src="sfx_glitch2.mp3" preload="none"></audio>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section id="pipeline" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag">// Production Pipeline</span>
+      <h2>AI-Powered Audio — Fully Digital</h2>
+    </div>
+    <div class="stat-row reveal">
+      <div class="stat-card st1"><div class="stn">04</div><div><div class="stl">Voice Narrations</div><div class="sts">One per act, AI-synthesised</div></div></div>
+      <div class="stat-card st2"><div class="stn">04</div><div><div class="stl">Music Loops</div><div class="sts">Adaptive mood per act</div></div></div>
+      <div class="stat-card st3"><div class="stn">10</div><div><div class="stl">Sound Effects</div><div class="sts">Mapped to physical interactions</div></div></div>
+    </div>
+    <div class="gap2 g2 reveal" style="margin-top:2px;">
+      <div class="panel">
+        <h3 style="color:var(--white)">Single-Laptop Digital Pipeline</h3>
+        <p>The full audio production pipeline — voice synthesis, music composition, and SFX sourcing — was operated entirely from a single laptop. This consolidated, portable architecture enabled rapid iteration and seamless asset deployment throughout the project without hardware bottlenecks.</p>
+        <p style="margin-top:14px;">The approach proved that immersive VR audio for a publicly exhibited experience can be produced with minimal cost of entry, provided the tooling choices are deliberate.</p>
+        <div class="p-status">Pipeline Status: Operational // Live_v1.0.4</div>
+        <div class="p-quote">"Generative AI not as a replacement for creativity — but as a tool to accelerate it. Rapid iteration, novel exploration, reduced cost of entry."</div>
+      </div>
+      <div class="panel">
+        <span class="tag" style="margin-bottom:20px;">// Integrated Toolset</span>
+        <div class="tool-list">
+          <div class="tool-item st1"><div class="tarrow">▶</div><div><div class="tname">Google Cloud Text-to-Speech</div><div class="tdesc">Voice-over synthesis for all four narration scripts. AI voice generation allowed rapid iteration on tone, pacing, and emotional register across the eight-frame arc.</div></div></div>
+          <div class="tool-item st2"><div class="tarrow">▶</div><div><div class="tname">Ableton + Spitfire Labs</div><div class="tdesc">Text-to-music composition for adaptive mood loops. Four background tracks produced — each calibrated to the emotional register of its act.</div></div></div>
+          <div class="tool-item st3"><div class="tarrow">▶</div><div><div class="tname">Freesound Library</div><div class="tdesc">Interactive SFX sourcing for all ten prop-triggered sound effects — selected, edited, and mapped to specific physical interactions within Unity.</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- UNITY -->
+<section id="unity" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag">// Technical Integration</span>
+      <h2>Unity XR and 3D Spatial Audio</h2>
+    </div>
+    <div class="gap2 g2 reveal">
+      <div class="panel">
+        <h3 style="color:var(--cyan)">Unity 2019.4.40f1</h3>
+        <p>Audio assets were integrated using Unity 2019.4.40f1, the ARCore XR Plugin, and the Dreamscape Learn SDK. The Unity XR Interaction Toolkit was used to map audio cues to real-time 3D interactions within each scene.</p>
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+          <span class="tag" style="margin-bottom:14px;">Scene Structure</span>
+          <div class="scene-list">
+            <div class="scene-item"><span class="scene-n">Scene 1</span><span>ServerRoom</span></div>
+            <div class="scene-item"><span class="scene-n">Scene 1.5</span><span>Transcending (transition)</span></div>
+            <div class="scene-item"><span class="scene-n">Scene 2</span><span>MainEnvironment (chip world)</span></div>
+            <div class="scene-item"><span class="scene-n">Scene 3</span><span>EndingServerRoom</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3 style="color:var(--cyan)">3D Spatial Sound System</h3>
+        <div class="arch-list">
+          <div class="arch-item"><div class="arch-bar"></div><div><div class="aname">Spatially placed 3D audio fields</div><div class="adesc">Environmental audio anchored to scene positions — sound shifts as the observer moves through the world.</div></div></div>
+          <div class="arch-item"><div class="arch-bar"></div><div><div class="aname">Innate object emitters</div><div class="adesc">Prop-embedded sound sources on interactive objects — each element has its own audio identity.</div></div></div>
+          <div class="arch-item"><div class="arch-bar"></div><div><div class="aname">Prop-triggered SFX</div><div class="adesc">Sound fires on physical interaction — button press, stick contact, and lever pull each trigger their mapped cue.</div></div></div>
+          <div class="arch-item"><div class="arch-bar"></div><div><div class="aname">Controller haptic and audio feedback</div><div class="adesc">Audio and haptics synchronised per controller event — every tactile moment paired with a corresponding sound.</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="haptic-bar reveal">
+      <span class="hl">Haptic Sync —</span>
+      <p class="ht">Floor vibrations escalate progressively into the chip transition. Fans activate in the direction of the flying deck. During the virus attack, sudden floor shakes and fan dispersion mirror the spread of the malware. Audio was tightly synchronised to each physical actuator cue throughout the experience.</p>
+    </div>
+  </div>
+</section>
+
+<!-- STILL 04 DIVIDER -->
+<div class="still-divider reveal">
+  <img src="hacked_vr_still_04_orb.jpg" alt="Hacked VR — orb foreground, data streams Act IV">
+  <div class="still-divider-overlay"></div>
+  <div class="still-label">
+    <span class="tag">// Act IV — Restoration of Integrity</span>
+    <h3>System restored.<br>Vigilance is our greatest ally.</h3>
+  </div>
+</div>
+
+<!-- REFLECTIONS -->
+<section id="reflections" class="section">
+  <div class="container">
+    <div class="sec-hd reveal">
+      <span class="tag" style="color:var(--green)">// Takeaways and Reflections</span>
+      <h2>What We Learned</h2>
+    </div>
+    <div class="gap2 g2 reveal">
+      <div class="panel">
+        <div class="ref-list">
+          <div class="ref-item r1"><div class="rn">01</div><div><div class="rtitle">Rapid Iteration</div><p class="rtext">A fully digital pipeline — cloud voice synthesis, AI music tools, and open SFX libraries — allowed the team to iterate audio ideas quickly without hardware bottlenecks or studio access requirements.</p></div></div>
+          <div class="ref-item r2"><div class="rn">02</div><div><div class="rtitle">Workflow Shift</div><p class="rtext">Music and voice production can be entirely digital with minimal cost of entry. Generative AI tools significantly reduced the learning curve while expanding the range of what was achievable within a semester timeline.</p></div></div>
+          <div class="ref-item r3"><div class="rn">03</div><div><div class="rtitle">Audio as UX</div><p class="rtext">Sound was not decorative — it was functional feedback. Every physical prop interaction had a paired audio cue. The haptic-audio synchronisation proved critical to the experience feeling grounded and real.</p></div></div>
+          <div class="ref-item r4"><div class="rn">04</div><div><div class="rtitle">Cross-Team Coordination</div><p class="rtext">Delivering audio assets to Unity across technical teams required disciplined asset naming, act-level tagging (A1–A4, S1–S4), and timeline placement documentation to ensure correct integration.</p></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <span class="tag" style="color:var(--green);margin-bottom:16px;">// Status Log</span>
+        <div class="log-list">
+          <div class="log-item"><span class="ltag ldone">[DONE]</span><span class="ltext">Voice scripts written and synthesised</span></div>
+          <div class="log-item"><span class="ltag ldone">[DONE]</span><span class="ltext">4 background music loops produced</span></div>
+          <div class="log-item"><span class="ltag ldone">[DONE]</span><span class="ltext">10 SFX mapped to physical interactions</span></div>
+          <div class="log-item"><span class="ltag ldone">[DONE]</span><span class="ltext">Unity 3D spatial audio deployed</span></div>
+          <div class="log-item"><span class="ltag ldone">[DONE]</span><span class="ltext">Haptic sync coordinated with tech team</span></div>
+          <div class="log-item"><span class="ltag ldone">[DONE]</span><span class="ltext">Publicly exhibited at MIXibition</span></div>
+          <div class="log-item"><span class="ltag lnext">[NEXT]</span><span class="ltext">Real-time generative audio (in progress)</span></div>
+        </div>
+        <div class="rclosing">"Human creative potential unleashed — not replaced — through AI-assisted audio production."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="fl"><strong>Hacked: VR</strong> — Sound Design Case Study<br>ASU DSC 551 · Spring 2024 · Arsh + William Mar</div>
+  <div class="fr">// SYSTEM_STATUS: RESTORED</div>
+</footer>
+
+<script>
+// ── AUDIO ENGINE ─────────────────────────────────────────────────────────────
+const bgMusic    = document.getElementById('bgMusic');    // synthesis1 — welcome narration
+const ambientLoop= document.getElementById('ambientLoop');// setting1   — Act I ambient loop
+const heroVid    = document.getElementById('herovid');
+let audioEnabled = false;
+
+// Fade utility
+function fadeIn(el, targetVol, durationMs){
+  el.volume = 0;
+  el.play().catch(()=>{});
+  const steps = 40;
+  const interval = durationMs / steps;
+  const inc = targetVol / steps;
+  let i = 0;
+  const t = setInterval(()=>{
+    i++;
+    el.volume = Math.min(targetVol, el.volume + inc);
+    if(i >= steps) clearInterval(t);
+  }, interval);
+}
+
+function fadeOut(el, durationMs, cb){
+  const steps = 40;
+  const interval = durationMs / steps;
+  const dec = el.volume / steps;
+  let i = 0;
+  const t = setInterval(()=>{
+    i++;
+    el.volume = Math.max(0, el.volume - dec);
+    if(i >= steps){ clearInterval(t); el.pause(); el.currentTime=0; if(cb) cb(); }
+  }, interval);
+}
+
+function enterExperience(){
+  const overlay = document.getElementById('entry-overlay');
+
+  // 1. Dismiss overlay
+  overlay.classList.add('fade-out');
+  setTimeout(()=>{ overlay.style.display='none'; }, 850);
+
+  // 2. Start hero video with sound
+  heroVid.muted = false;
+  heroVid.volume = 0.45;
+  heroVid.play().catch(()=>{ heroVid.muted=true; });
+
+  // 3. Play welcome narration (synthesis1) — the voice that greeted VR participants
+  fadeIn(bgMusic, 0.85, 1200);
+
+  // 4. When narration ends, crossfade into ambient loop (setting1)
+  bgMusic.addEventListener('ended', ()=>{
+    fadeIn(ambientLoop, 0.3, 2500);
+  }, { once: true });
+
+  audioEnabled = true;
+  document.getElementById('muteBtn').textContent = '⊘ Mute';
+}
+
+function toggleMute(){
+  const b = document.getElementById('muteBtn');
+  if(!audioEnabled){
+    // If they skipped the overlay somehow, just unmute video
+    heroVid.muted = false;
+    heroVid.volume = 0.45;
+    heroVid.play().catch(()=>{});
+    b.textContent = '⊘ Mute';
+    audioEnabled = true;
+    return;
+  }
+  const allMuted = heroVid.muted;
+  if(allMuted){
+    heroVid.muted = false;
+    if(ambientLoop.paused && bgMusic.paused){ fadeIn(ambientLoop, 0.3, 1000); }
+    else { ambientLoop.volume = 0.3; bgMusic.volume = 0.85; }
+    b.textContent = '⊘ Mute';
+  } else {
+    heroVid.muted = true;
+    if(!ambientLoop.paused) fadeOut(ambientLoop, 800);
+    if(!bgMusic.paused)     fadeOut(bgMusic, 800);
+    b.textContent = '♪ Unmute';
+  }
+}
+
+// ── ACT SELECTOR ──────────────────────────────────────────────────────────────
+function selAct(el){
+  document.querySelectorAll('.arc-act').forEach(a=>a.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// ── SCROLL REVEAL ─────────────────────────────────────────────────────────────
+const obs = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{ threshold:0.08, rootMargin:'0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
